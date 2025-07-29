@@ -1,0 +1,39 @@
+name: thadam
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.8.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+
+  # Firebase & Firestore
+  firebase_core: ^3.14.0
+  firebase_auth: ^5.6.0
+  cloud_firestore: ^5.6.9
+
+  # PDF, Storage, and Sharing
+  pdf: ^3.10.4
+  printing: ^5.12.0
+  path_provider: ^2.0.15
+  permission_handler: ^11.3.1
+
+  # UI Components
+  flutter_rating_bar: ^4.0.1
+  intl: ^0.20.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/

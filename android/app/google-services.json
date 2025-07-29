@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "983237703448",
+    "project_id": "thadam-61260",
+    "storage_bucket": "thadam-61260.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:983237703448:android:a3cfddcf8a9b720d9f506d",
+        "android_client_info": {
+          "package_name": "com.example.thadam"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDOG_LaiBxSKbuOl4xRBzYeHjhMcQJc4Nc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
