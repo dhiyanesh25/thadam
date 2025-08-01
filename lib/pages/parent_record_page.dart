@@ -24,46 +24,78 @@ class ParentRecordPage extends StatelessWidget {
         itemBuilder: (context, index) {
           final student = studentRecords[index];
 
+          final name = student['name'] ?? 'Unnamed';
+          final disability = student['disability'] ?? 'Not available';
+          final gender = student['gender'] ?? 'Not available';
+          final age = student['age'] ?? 'Not available';
+          final records = student['records'] as List<dynamic>? ?? [];
+
           return Card(
             margin: const EdgeInsets.all(12),
             elevation: 4,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
-            child: ListTile(
-              title: Text(
-                student['name'] ?? 'Unnamed',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              subtitle: Column(
+            child: Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 4),
-                  Text("Disability: ${student['disability'] ?? 'Not available'}"),
-                  Text("Gender: ${student['gender'] ?? 'Not available'}"),
-                  Text("Age: ${student['age'] ?? 'Not available'}"),
-                  const SizedBox(height: 4),
-                  if (student['records'] != null)
+                  Text(name,
+                      style: const TextStyle(
+                          fontSize: 20, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  Text("Disability: $disability"),
+                  Text("Gender: $gender"),
+                  Text("Age: $age"),
+                  const SizedBox(height: 12),
+                  if (records.isNotEmpty)
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: List.generate(
-                        (student['records'] as List).length,
-                            (i) {
-                          final record = student['records'][i];
-                          return Padding(
-                            padding: const EdgeInsets.only(top: 6),
-                            child: Text(
-                              "📌 ${record['areaOfSupport'] ?? 'Area'} | "
-                                  "Challenge: ${record['challenge'] ?? 'None'} | "
-                                  "Rating: ${record['finalRating'] ?? '-'}",
-                              style: const TextStyle(fontSize: 14),
+                      children: [
+                        const Text("Progress Records:",
+                            style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 8),
+                        ...records.map((record) {
+                          final area = record['areaOfSupport'] ?? 'N/A';
+                          final challenge =
+                              record['challenge'] ?? 'N/A';
+                          final rating = record['finalRating'] ?? 0;
+
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[100],
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.blueGrey),
+                            ),
+                            child: Column(
+                              crossAxisAlignment:
+                              CrossAxisAlignment.start,
+                              children: [
+                                Text("📌 Area: $area",
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold)),
+                                Text("Challenge: $challenge"),
+                                Row(
+                                  children: List.generate(5, (i) {
+                                    return Icon(
+                                      i < rating
+                                          ? Icons.star
+                                          : Icons.star_border,
+                                      color: Colors.amber,
+                                      size: 20,
+                                    );
+                                  }),
+                                ),
+                              ],
                             ),
                           );
-                        },
-                      ),
+                        }).toList(),
+                      ],
                     ),
                 ],
               ),

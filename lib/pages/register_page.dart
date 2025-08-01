@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'login_page.dart';
 import 'dashboard_page.dart';
 import 'parent_dashboard_page.dart';
@@ -14,16 +15,17 @@ class RegisterPage extends StatefulWidget {
 
 class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
+
   final _nameController = TextEditingController();
   final _ageController = TextEditingController();
   final _mobileController = TextEditingController();
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _studentNameController = TextEditingController();
 
   String? _selectedGender;
   String? _selectedUserType;
-  bool isLoading = false;
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -43,14 +45,18 @@ class _RegisterPageState extends State<RegisterPage> {
               const SizedBox(height: 40),
               const Text(
                 'Register',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
+                style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white),
               ),
               const SizedBox(height: 20),
 
               _buildTextField(_nameController, 'Name'),
               const SizedBox(height: 12),
 
-              _buildTextField(_ageController, 'Age', keyboardType: TextInputType.number),
+              _buildTextField(_ageController, 'Age',
+                  keyboardType: TextInputType.number),
               const SizedBox(height: 12),
 
               _buildTextField(
@@ -60,6 +66,18 @@ class _RegisterPageState extends State<RegisterPage> {
                 validator: (value) {
                   if (value == null || value.isEmpty) return 'Enter mobile number';
                   if (!RegExp(r'^\d{10}$').hasMatch(value)) return 'Must be 10 digits';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+
+              _buildTextField(
+                _emailController,
+                'Email',
+                keyboardType: TextInputType.emailAddress,
+                validator: (value) {
+                  if (value == null || value.isEmpty) return 'Enter email';
+                  if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) return 'Enter valid email';
                   return null;
                 },
               ),
@@ -111,14 +129,13 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
               const SizedBox(height: 20),
 
-              isLoading
-                  ? const Center(child: CircularProgressIndicator(color: Colors.white))
-                  : ElevatedButton(
+              ElevatedButton(
                 onPressed: _registerUser,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF0A2D63),
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30)),
                   padding: const EdgeInsets.symmetric(vertical: 15),
                 ),
                 child: const Text('Register'),
@@ -127,7 +144,8 @@ class _RegisterPageState extends State<RegisterPage> {
 
               Center(
                 child: TextButton(
-                  child: const Text("Already registered? Login", style: TextStyle(color: Colors.white)),
+                  child: const Text("Already registered? Login",
+                      style: TextStyle(color: Colors.white)),
                   onPressed: () => Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(builder: (_) => const LoginPage()),
@@ -149,7 +167,8 @@ class _RegisterPageState extends State<RegisterPage> {
       controller: controller,
       obscureText: obscureText,
       keyboardType: keyboardType,
-      validator: validator ?? (value) => value == null || value.isEmpty ? 'Enter $label' : null,
+      validator: validator ??
+              (value) => value == null || value.isEmpty ? 'Enter $label' : null,
       decoration: InputDecoration(
         hintText: label,
         filled: true,
@@ -168,7 +187,9 @@ class _RegisterPageState extends State<RegisterPage> {
     return DropdownButtonFormField<String>(
       value: value,
       hint: Text("Select $label"),
-      items: items.map((item) => DropdownMenuItem(value: item, child: Text(item))).toList(),
+      items: items
+          .map((item) => DropdownMenuItem(value: item, child: Text(item)))
+          .toList(),
       onChanged: onChanged,
       validator: (value) => value == null ? 'Please select $label' : null,
       decoration: InputDecoration(
@@ -189,13 +210,12 @@ class _RegisterPageState extends State<RegisterPage> {
       final name = _nameController.text.trim();
       final age = _ageController.text.trim();
       final mobile = _mobileController.text.trim();
+      final email = _emailController.text.trim();
       final password = _passwordController.text.trim();
-      final email = "$mobile@thadam.com";
       final studentName = _studentNameController.text.trim();
 
-      final isParentOrTherapist = _selectedUserType == 'Parent' || _selectedUserType == 'Therapist';
-
-      setState(() => isLoading = true);
+      final isParentOrTherapist =
+          _selectedUserType == 'Parent' || _selectedUserType == 'Therapist';
 
       try {
         await _auth.createUserWithEmailAndPassword(email: email, password: password);
@@ -206,12 +226,12 @@ class _RegisterPageState extends State<RegisterPage> {
           'gender': _selectedGender,
           'userType': _selectedUserType,
           'mobile': mobile,
+          'email': email,
           if (isParentOrTherapist) 'studentName': studentName,
         };
 
         await _firestore.collection('users').doc(mobile).set(userData);
 
-        // Navigate to respective dashboard
         if (isParentOrTherapist) {
           Navigator.pushReplacement(
             context,
@@ -244,8 +264,6 @@ class _RegisterPageState extends State<RegisterPage> {
         _showSnackBar(e.message ?? "Authentication error");
       } catch (e) {
         _showSnackBar("Error: $e");
-      } finally {
-        setState(() => isLoading = false);
       }
     }
   }

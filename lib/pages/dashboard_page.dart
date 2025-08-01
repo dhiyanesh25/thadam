@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'profile_page.dart';
-import 'record_page.dart'; // ✅ Ensure this exists
+import 'record_page.dart';
 
 class DashboardPage extends StatefulWidget {
   final String name;
   final String age;
   final String mobile;
   final String gender;
-  final String whoYouAre; // ✅ Replaced 'disability'
+  final String whoYouAre;
 
   const DashboardPage({
     super.key,
@@ -30,7 +30,7 @@ class _DashboardPageState extends State<DashboardPage> {
   late String age;
   late String mobile;
   late String gender;
-  late String whoYouAre; // ✅ Updated field
+  late String whoYouAre;
 
   @override
   void initState() {
@@ -57,7 +57,7 @@ class _DashboardPageState extends State<DashboardPage> {
             age: age,
             mobile: mobile,
             gender: gender,
-            whoYouAre: whoYouAre, // ✅ Passed correctly
+            whoYouAre: whoYouAre,
           ),
         ),
       );

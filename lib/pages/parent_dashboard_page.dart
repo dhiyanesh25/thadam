@@ -37,16 +37,18 @@ class _ParentDashboardPageState extends State<ParentDashboardPage> {
   }
 
   Future<void> _loadStudentData() async {
-    final snapshot =
-    await FirebaseFirestore.instance.collection('students').get();
+    final snapshot = await FirebaseFirestore.instance.collection('students').get();
 
     final filtered = snapshot.docs
         .map((doc) => doc.data())
-        .where((data) =>
-    data['name'] != null &&
-        data['name'].toString().toLowerCase() ==
-            widget.studentName.toLowerCase())
+        .where((data) {
+      final name = data['name']?.toString().toLowerCase().trim() ?? '';
+      final inputName = widget.studentName.toLowerCase().trim();
+      return name == inputName;
+    })
         .toList();
+
+    debugPrint('Filtered Students: $filtered');
 
     setState(() {
       _filteredStudents = List<Map<String, dynamic>>.from(filtered);

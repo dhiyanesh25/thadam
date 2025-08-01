@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import 'register_page.dart';
 import 'dashboard_page.dart';
 import 'parent_dashboard_page.dart';
+import 'forgot_password_page.dart'; // ✅ Make sure this page exists
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -17,10 +20,40 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _mobileController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool rememberMe = false;
-  bool isLoading = false;
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCredentials();
+  }
+
+  Future<void> _loadCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedMobile = prefs.getString('savedMobile') ?? '';
+    final savedPassword = prefs.getString('savedPassword') ?? '';
+
+    if (savedMobile.isNotEmpty && savedPassword.isNotEmpty) {
+      setState(() {
+        _mobileController.text = savedMobile;
+        _passwordController.text = savedPassword;
+        rememberMe = true;
+      });
+    }
+  }
+
+  Future<void> _saveCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (rememberMe) {
+      await prefs.setString('savedMobile', _mobileController.text.trim());
+      await prefs.setString('savedPassword', _passwordController.text.trim());
+    } else {
+      await prefs.remove('savedMobile');
+      await prefs.remove('savedPassword');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -92,15 +125,31 @@ class _LoginPageState extends State<LoginPage> {
                 ],
               ),
 
-              const SizedBox(height: 20),
-
               Center(
-                child: isLoading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : ElevatedButton(
+                child: ElevatedButton(
                   onPressed: _loginUser,
                   style: elevatedBtnStyle(),
                   child: const Text('Log In'),
+                ),
+              ),
+
+              const SizedBox(height: 10),
+
+              Center(
+                child: TextButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const ForgotPasswordPage()),
+                    );
+                  },
+                  child: const Text(
+                    'Forgot Password?',
+                    style: TextStyle(
+                      color: Colors.white,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
                 ),
               ),
 
@@ -134,22 +183,18 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> _loginUser() async {
     if (_formKey.currentState!.validate()) {
-      final mobile = _mobileController.text;
+      final mobile = _mobileController.text.trim();
       final email = "$mobile@gmail.com";
-      final password = _passwordController.text;
-
-      setState(() => isLoading = true);
+      final password = _passwordController.text.trim();
 
       try {
         await _auth.signInWithEmailAndPassword(email: email, password: password);
         print("Firebase login successful for $email");
 
         final doc = await _firestore.collection('users').doc(mobile).get();
-
         if (!doc.exists) {
           _showSnackBar('User profile not found in database.');
           print("Firestore document not found for mobile: $mobile");
-          setState(() => isLoading = false);
           return;
         }
 
@@ -160,7 +205,7 @@ class _LoginPageState extends State<LoginPage> {
         final userType = data['userType'];
         final studentName = data['studentName'] ?? '';
 
-        setState(() => isLoading = false);
+        await _saveCredentials();
 
         if (userType == "Parent" || userType == "Therapist") {
           Navigator.pushReplacement(
@@ -192,8 +237,6 @@ class _LoginPageState extends State<LoginPage> {
         }
       } on FirebaseAuthException catch (e) {
         print("FirebaseAuthException: ${e.code} - ${e.message}");
-        setState(() => isLoading = false);
-
         if (e.code == 'user-not-found') {
           _showSnackBar('User not found. Redirecting to registration...');
           Navigator.push(
@@ -207,7 +250,6 @@ class _LoginPageState extends State<LoginPage> {
         }
       } catch (e) {
         print("Unexpected error during login: $e");
-        setState(() => isLoading = false);
         _showSnackBar('An error occurred. Try again.');
       }
     }
