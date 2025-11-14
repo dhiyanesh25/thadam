@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'parent_record_page.dart';
 import 'profile_page.dart';
 
 class ParentDashboardPage extends StatefulWidget {
   final String name;
   final String age;
-  final String mobile;
+  final String mobile; // Used to link students
   final String gender;
   final String whoYouAre;
-  final String studentName;
 
   const ParentDashboardPage({
     super.key,
@@ -19,7 +17,6 @@ class ParentDashboardPage extends StatefulWidget {
     required this.mobile,
     required this.gender,
     required this.whoYouAre,
-    required this.studentName,
   });
 
   @override
@@ -28,31 +25,22 @@ class ParentDashboardPage extends StatefulWidget {
 
 class _ParentDashboardPageState extends State<ParentDashboardPage> {
   int _selectedIndex = 0;
-  List<Map<String, dynamic>> _filteredStudents = [];
 
   @override
   void initState() {
     super.initState();
-    _loadStudentData();
-  }
 
-  Future<void> _loadStudentData() async {
-    final snapshot = await FirebaseFirestore.instance.collection('students').get();
-
-    final filtered = snapshot.docs
-        .map((doc) => doc.data())
-        .where((data) {
-      final name = data['name']?.toString().toLowerCase().trim() ?? '';
-      final inputName = widget.studentName.toLowerCase().trim();
-      return name == inputName;
-    })
-        .toList();
-
-    debugPrint('Filtered Students: $filtered');
-
-    setState(() {
-      _filteredStudents = List<Map<String, dynamic>>.from(filtered);
-    });
+    // Restrict access to only parents
+    if (widget.whoYouAre != 'Parent') {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Access denied: Only parents can view this page'),
+          ),
+        );
+      });
+    }
   }
 
   void _onItemTapped(int index) {
@@ -61,8 +49,8 @@ class _ParentDashboardPageState extends State<ParentDashboardPage> {
         context,
         MaterialPageRoute(
           builder: (context) => ParentRecordPage(
-            studentRecords: _filteredStudents,
-            studentName: widget.studentName,
+            parentPhone: widget.mobile, // FIXED: Changed to parentPhone
+            userRole: widget.whoYouAre,
           ),
         ),
       );
@@ -100,10 +88,15 @@ class _ParentDashboardPageState extends State<ParentDashboardPage> {
         child: _selectedIndex == 0
             ? Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
-            Text("Your Results", style: TextStyle(fontSize: 24)),
-            SizedBox(height: 20),
-            Text("Pending Works", style: TextStyle(fontSize: 20)),
+          children: [
+            const Text("Your Results", style: TextStyle(fontSize: 24)),
+            const SizedBox(height: 20),
+            const Text(
+              "You are viewing your child's progress.",
+              style: TextStyle(fontSize: 18, color: Colors.grey),
+            ),
+            const SizedBox(height: 20),
+            const Text("Pending Works", style: TextStyle(fontSize: 20)),
           ],
         )
             : const Text(

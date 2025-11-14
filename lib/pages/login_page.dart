@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'register_page.dart';
 import 'dashboard_page.dart';
 import 'parent_dashboard_page.dart';
-import 'forgot_password_page.dart'; // ✅ Make sure this page exists
+import 'forgot_password_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -71,14 +71,16 @@ class _LoginPageState extends State<LoginPage> {
                 style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 10),
-              const Text("Let's get Started with it!",
-                  style: TextStyle(color: Colors.black87)),
+              const Text(
+                "Let's get Started with it!",
+                style: TextStyle(color: Colors.black87),
+              ),
               const SizedBox(height: 30),
 
               const Text('Mobile number'),
               TextFormField(
                 controller: _mobileController,
-                decoration: inputDecoration(),
+                decoration: _inputDecoration(),
                 keyboardType: TextInputType.phone,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -97,13 +99,13 @@ class _LoginPageState extends State<LoginPage> {
               TextFormField(
                 controller: _passwordController,
                 obscureText: true,
-                decoration: inputDecoration(),
+                decoration: _inputDecoration(),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Enter your password';
                   }
-                  if (!RegExp(r'^(?=.*[A-Z]).{6,}$').hasMatch(value)) {
-                    return 'Password must have at least 1 uppercase letter and 6+ characters';
+                  if (value.length < 6) {
+                    return 'Password must be at least 6 characters';
                   }
                   return null;
                 },
@@ -128,7 +130,7 @@ class _LoginPageState extends State<LoginPage> {
               Center(
                 child: ElevatedButton(
                   onPressed: _loginUser,
-                  style: elevatedBtnStyle(),
+                  style: _elevatedBtnStyle(),
                   child: const Text('Log In'),
                 ),
               ),
@@ -140,7 +142,9 @@ class _LoginPageState extends State<LoginPage> {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const ForgotPasswordPage()),
+                      MaterialPageRoute(
+                        builder: (_) => const ForgotPasswordPage(),
+                      ),
                     );
                   },
                   child: const Text(
@@ -169,9 +173,13 @@ class _LoginPageState extends State<LoginPage> {
                     context,
                     MaterialPageRoute(builder: (_) => const RegisterPage()),
                   ),
-                  child: const Text('New User? Register',
-                      style: TextStyle(
-                          color: Colors.white, fontWeight: FontWeight.bold)),
+                  child: const Text(
+                    'New User? Register',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -184,17 +192,25 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _loginUser() async {
     if (_formKey.currentState!.validate()) {
       final mobile = _mobileController.text.trim();
-      final email = "$mobile@gmail.com";
+      final email = "$mobile@gmail.com"; // login using email+password
       final password = _passwordController.text.trim();
 
       try {
+        // FirebaseAuth Login
         await _auth.signInWithEmailAndPassword(email: email, password: password);
-        print("Firebase login successful for $email");
 
-        final doc = await _firestore.collection('users').doc(mobile).get();
+        // Get the logged-in user's UID
+        final user = _auth.currentUser;
+        if (user == null) {
+          _showSnackBar('Authentication failed. Please try again.');
+          return;
+        }
+
+        // Firestore lookup using UID
+        final doc = await _firestore.collection('users').doc(user.uid).get();
+
         if (!doc.exists) {
           _showSnackBar('User profile not found in database.');
-          print("Firestore document not found for mobile: $mobile");
           return;
         }
 
@@ -203,21 +219,20 @@ class _LoginPageState extends State<LoginPage> {
         final age = data['age'];
         final gender = data['gender'];
         final userType = data['userType'];
-        final studentName = data['studentName'] ?? '';
 
         await _saveCredentials();
 
-        if (userType == "Parent" || userType == "Therapist") {
+        if (userType == "Parent") {
+          // For parents, we pass their mobile number directly to parent dashboard
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
               builder: (context) => ParentDashboardPage(
                 name: name,
                 age: age,
-                mobile: mobile,
+                mobile: mobile, // Parent's phone
                 gender: gender,
                 whoYouAre: userType,
-                studentName: studentName,
               ),
             ),
           );
@@ -236,7 +251,6 @@ class _LoginPageState extends State<LoginPage> {
           );
         }
       } on FirebaseAuthException catch (e) {
-        print("FirebaseAuthException: ${e.code} - ${e.message}");
         if (e.code == 'user-not-found') {
           _showSnackBar('User not found. Redirecting to registration...');
           Navigator.push(
@@ -249,19 +263,16 @@ class _LoginPageState extends State<LoginPage> {
           _showSnackBar('Login failed: ${e.message}');
         }
       } catch (e) {
-        print("Unexpected error during login: $e");
         _showSnackBar('An error occurred. Try again.');
       }
     }
   }
 
   void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  InputDecoration inputDecoration() => InputDecoration(
+  InputDecoration _inputDecoration() => InputDecoration(
     filled: true,
     fillColor: Colors.grey.shade300,
     border: OutlineInputBorder(
@@ -270,7 +281,7 @@ class _LoginPageState extends State<LoginPage> {
     ),
   );
 
-  ButtonStyle elevatedBtnStyle() => ElevatedButton.styleFrom(
+  ButtonStyle _elevatedBtnStyle() => ElevatedButton.styleFrom(
     backgroundColor: const Color(0xFF0A2D63),
     foregroundColor: Colors.white,
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),

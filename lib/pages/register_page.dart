@@ -22,7 +22,6 @@ class _RegisterPageState extends State<RegisterPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  final _studentNameController = TextEditingController();
 
   String? _selectedGender;
   String? _selectedUserType;
@@ -46,17 +45,21 @@ class _RegisterPageState extends State<RegisterPage> {
               const Text(
                 'Register',
                 style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white),
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
               const SizedBox(height: 20),
 
               _buildTextField(_nameController, 'Name'),
               const SizedBox(height: 12),
 
-              _buildTextField(_ageController, 'Age',
-                  keyboardType: TextInputType.number),
+              _buildTextField(
+                _ageController,
+                'Age',
+                keyboardType: TextInputType.number,
+              ),
               const SizedBox(height: 12),
 
               _buildTextField(
@@ -99,18 +102,14 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
               const SizedBox(height: 12),
 
-              if (_selectedUserType == 'Parent' || _selectedUserType == 'Therapist') ...[
-                _buildTextField(_studentNameController, 'Student Name'),
-                const SizedBox(height: 12),
-              ],
-
               _buildTextField(
                 _passwordController,
                 'Password',
                 obscureText: true,
                 validator: (value) {
                   if (value == null || value.isEmpty) return 'Enter password';
-                  if (!RegExp(r'^(?=.*[A-Z])(?=.*\d).{8,}$').hasMatch(value)) {
+                  if (!RegExp(r'^(?=.*[A-Z])(?=.*\d)(?=.*[a-zA-Z\d@$!%*?&]).{8,}$')
+                      .hasMatch(value)) {
                     return 'Min 8 chars, 1 capital, 1 number';
                   }
                   return null;
@@ -144,8 +143,10 @@ class _RegisterPageState extends State<RegisterPage> {
 
               Center(
                 child: TextButton(
-                  child: const Text("Already registered? Login",
-                      style: TextStyle(color: Colors.white)),
+                  child: const Text(
+                    "Already registered? Login",
+                    style: TextStyle(color: Colors.white),
+                  ),
                   onPressed: () => Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(builder: (_) => const LoginPage()),
@@ -212,27 +213,45 @@ class _RegisterPageState extends State<RegisterPage> {
       final mobile = _mobileController.text.trim();
       final email = _emailController.text.trim();
       final password = _passwordController.text.trim();
-      final studentName = _studentNameController.text.trim();
-
-      final isParentOrTherapist =
-          _selectedUserType == 'Parent' || _selectedUserType == 'Therapist';
+      final isParent = _selectedUserType == 'Parent';
 
       try {
-        await _auth.createUserWithEmailAndPassword(email: email, password: password);
+        // Parent validation (FIXED: use parentPhone)
+        if (isParent) {
+          final studentSnapshot = await _firestore
+              .collection('students')
+              .where('parentPhone', isEqualTo: mobile)
+              .get();
+
+          if (studentSnapshot.docs.isEmpty) {
+            _showSnackBar("Your child entry is not updated yet!");
+            return;
+          }
+        }
+
+        // Create Firebase Auth user
+        UserCredential userCredential =
+        await _auth.createUserWithEmailAndPassword(
+          email: "$mobile@gmail.com", // Login based on mobile
+          password: password,
+        );
+
+        String uid = userCredential.user!.uid;
 
         final userData = {
+          'uid': uid,
           'name': name,
           'age': age,
           'gender': _selectedGender,
           'userType': _selectedUserType,
           'mobile': mobile,
           'email': email,
-          if (isParentOrTherapist) 'studentName': studentName,
         };
 
-        await _firestore.collection('users').doc(mobile).set(userData);
+        await _firestore.collection('users').doc(uid).set(userData);
 
-        if (isParentOrTherapist) {
+        // Navigate based on role
+        if (isParent) {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
@@ -242,7 +261,6 @@ class _RegisterPageState extends State<RegisterPage> {
                 mobile: mobile,
                 gender: _selectedGender!,
                 whoYouAre: _selectedUserType!,
-                studentName: studentName,
               ),
             ),
           );

@@ -10,9 +10,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-
+  file_picker: ^8.0.0
   cupertino_icons: ^1.0.8
-
+  http: ^1.2.0
   # Firebase & Firestore
   firebase_core: ^3.14.0
   firebase_auth: ^5.6.0
@@ -24,7 +24,7 @@ dependencies:
   path_provider: ^2.0.15
   permission_handler: ^11.3.1
   shared_preferences: ^2.2.2
-
+  share_plus: ^10.0.2
   # UI Components
   flutter_rating_bar: ^4.0.1
   intl: ^0.20.2

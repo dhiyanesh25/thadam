@@ -8,7 +8,7 @@ class DashboardPage extends StatefulWidget {
   final String age;
   final String mobile;
   final String gender;
-  final String whoYouAre;
+  final String whoYouAre; // Teacher, Special Educator, Therapist
 
   const DashboardPage({
     super.key,
@@ -26,45 +26,30 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   int _selectedIndex = 0;
 
-  late String name;
-  late String age;
-  late String mobile;
-  late String gender;
-  late String whoYouAre;
-
-  @override
-  void initState() {
-    super.initState();
-    name = widget.name;
-    age = widget.age;
-    mobile = widget.mobile;
-    gender = widget.gender;
-    whoYouAre = widget.whoYouAre;
-  }
-
   void _onItemTapped(int index) {
     if (index == 2) {
+      // Navigate to RecordPage and pass the userRole
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => const RecordPage()),
+        MaterialPageRoute(
+          builder: (context) => RecordPage(userRole: widget.whoYouAre),
+        ),
       );
     } else if (index == 3) {
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => ProfilePage(
-            name: name,
-            age: age,
-            mobile: mobile,
-            gender: gender,
-            whoYouAre: whoYouAre,
+            name: widget.name,
+            age: widget.age,
+            mobile: widget.mobile,
+            gender: widget.gender,
+            whoYouAre: widget.whoYouAre,
           ),
         ),
       );
     } else {
-      setState(() {
-        _selectedIndex = index;
-      });
+      setState(() => _selectedIndex = index);
     }
   }
 
@@ -74,7 +59,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text("Hi $name, Happy $currentDay!"),
+        title: Text("Hi ${widget.name}, Happy $currentDay!"),
         backgroundColor: const Color(0xFF5A9BD8),
         centerTitle: true,
       ),

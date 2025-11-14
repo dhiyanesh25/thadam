@@ -6,8 +6,14 @@ import 'package:intl/intl.dart';
 class StudentDetailPage extends StatefulWidget {
   final String studentId;
   final String studentName;
+  final String userRole; // Added role
 
-  const StudentDetailPage({super.key, required this.studentId, required this.studentName});
+  const StudentDetailPage({
+    super.key,
+    required this.studentId,
+    required this.studentName,
+    required this.userRole,
+  });
 
   @override
   State<StudentDetailPage> createState() => _StudentDetailPageState();
@@ -110,10 +116,12 @@ class _StudentDetailPageState extends State<StudentDetailPage> {
   String? selectedArea;
   String? selectedChallenge;
 
+  bool get isParent => widget.userRole.toLowerCase() == 'parent';
+
   Future<void> _addRecordDialog() async {
+    if (isParent) return; // Parents cannot add records
+
     final _formKey = GlobalKey<FormState>();
-    String? area;
-    String? challenge;
     double initialRating = 1;
 
     await showDialog(
@@ -137,7 +145,6 @@ class _StudentDetailPageState extends State<StudentDetailPage> {
                         selectedArea = val;
                         selectedChallenge = null;
                       });
-                      area = val;
                     },
                     decoration: const InputDecoration(labelText: 'Area of Support'),
                     validator: (val) => val == null ? 'Select area' : null,
@@ -152,12 +159,10 @@ class _StudentDetailPageState extends State<StudentDetailPage> {
                         .toList(),
                     onChanged: (val) {
                       setStateDialog(() => selectedChallenge = val);
-                      challenge = val;
                     },
                     decoration: const InputDecoration(labelText: 'Challenges Observed'),
                     validator: (val) => val == null ? 'Select challenge' : null,
                   ),
-
                   const SizedBox(height: 10),
                   const Text("Initial Rating"),
                   RatingBar.builder(
@@ -165,7 +170,8 @@ class _StudentDetailPageState extends State<StudentDetailPage> {
                     minRating: 1,
                     maxRating: 5,
                     allowHalfRating: false,
-                    itemBuilder: (context, _) => const Icon(Icons.star, color: Colors.amber),
+                    itemBuilder: (context, _) =>
+                    const Icon(Icons.star, color: Colors.amber),
                     onRatingUpdate: (rating) => initialRating = rating,
                   ),
                 ],
@@ -200,6 +206,8 @@ class _StudentDetailPageState extends State<StudentDetailPage> {
   }
 
   Future<void> _updateFinalRating(String docId) async {
+    if (isParent) return; // Parents cannot update ratings
+
     double finalRating = 1;
 
     await showDialog(
@@ -211,7 +219,8 @@ class _StudentDetailPageState extends State<StudentDetailPage> {
           minRating: 1,
           maxRating: 5,
           allowHalfRating: false,
-          itemBuilder: (context, _) => const Icon(Icons.star, color: Colors.amber),
+          itemBuilder: (context, _) =>
+          const Icon(Icons.star, color: Colors.amber),
           onRatingUpdate: (rating) => finalRating = rating,
         ),
         actions: [
@@ -243,7 +252,8 @@ class _StudentDetailPageState extends State<StudentDetailPage> {
         title: Text(widget.studentName),
         backgroundColor: const Color(0xFF5A9BD8),
         actions: [
-          IconButton(icon: const Icon(Icons.add), onPressed: _addRecordDialog),
+          if (!isParent) // Only show Add button for non-parents
+            IconButton(icon: const Icon(Icons.add), onPressed: _addRecordDialog),
           const SizedBox(width: 10),
           ElevatedButton.icon(
             icon: const Icon(Icons.sort, size: 18),
@@ -314,10 +324,12 @@ class _StudentDetailPageState extends State<StudentDetailPage> {
                       Text("Date: ${data['date'] ?? ''}"),
                     ],
                   ),
-                  trailing: IconButton(
+                  trailing: !isParent
+                      ? IconButton(
                     icon: const Icon(Icons.star, color: Colors.amber),
                     onPressed: () => _updateFinalRating(records[index].id),
-                  ),
+                  )
+                      : null, // Parents cannot update
                 ),
               );
             },
